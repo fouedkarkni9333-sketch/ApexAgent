@@ -3,10 +3,14 @@ import json
 import subprocess
 import google.generativeai as genai
 
-# إعداد مفتاح Gemini من متغيرات البيئة الآمنة في GitHub
-API_KEY = os.environ.get("GEMINI_API_KEY")
+# البحث عن مفتاح API بأي من التسميتين لضمان عدم حدوث أخطاء
+API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+
+if not API_KEY:
+    raise ValueError("لم يتم العثور على مفتاح Gemini API في متغيرات البيئة!")
+
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-3.8-flash")
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 def load_file(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -17,7 +21,6 @@ def save_file(filepath, content):
         f.write(content)
 
 def test_code_in_sandbox(code_content):
-    """اختبار الكود الجديد في ملف مؤقت للتأكد من خلوه من الأخطاء البرمجية"""
     sandbox_file = "sandbox_test.py"
     save_file(sandbox_file, code_content)
     try:
@@ -38,7 +41,6 @@ def evolve():
     current_code = load_file("target_app.py")
     memory = json.loads(load_file("memory.json"))
     
-    # قراءة آخر 5 تطورات فقط لتوفير استهلاك التوكنز (Sliding Window)
     recent_history = memory["evolution_history"][-5:]
     
     prompt = f"""
@@ -62,7 +64,6 @@ def evolve():
     response = model.generate_content(prompt)
     new_code = response.text.strip()
     
-    # تنظيف أي علامات markdown قد يضيفها النموذج بالخطأ
     if new_code.startswith("```python"):
         new_code = new_code[9:]
     if new_code.startswith("```"):
@@ -71,7 +72,6 @@ def evolve():
         new_code = new_code[:-3]
     new_code = new_code.strip()
 
-    # اختبار الكود الجديد قبل اعتماده
     is_valid, error_msg = test_code_in_sandbox(new_code)
     
     new_cycle = memory["version"] + 1
