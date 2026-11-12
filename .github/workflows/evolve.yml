@@ -27,7 +27,7 @@ jobs:
 
       - name: تشغيل الوكيل الذاتي
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python agent.py
 
       - name: حفظ التطور الجديد في المستودع (Git Commit & Push)
